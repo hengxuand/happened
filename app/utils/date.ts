@@ -34,3 +34,8 @@ export function formatTimeUTC(dateString: string, locale: string): string {
         timeZone: 'UTC',
     })
 }
+
+/** Convenience wrapper: formats a UTC ISO date string using a language code ('en' | 'zh'). */
+export function displayTime(dateString: string, lang: string): string {
+    return formatTimeUTC(dateString, lang === 'en' ? 'en-US' : 'zh-CN')
+}
