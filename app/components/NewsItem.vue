@@ -2,22 +2,22 @@
     <article class="news-item" :class="{ expanded: expanded }">
         <div class="news-summary" @click="$emit('toggle', item.id)">
             <div class="summary-content">
-                <h2>
-                    <span v-if="item.topic" class="category">{{ translateTopic(item.topic) }}</span>
-                    <span class="source">{{ item.source }}</span>
-                </h2>
                 <h2 class="title">{{ item.title }}</h2>
-            </div>
-            <div class="summary-meta">
-                <time v-if="item.pub_date" :datetime="item.pub_date" :data-utc-time="item.pub_date" :data-lang="lang">
-                    {{ displayTime(item.pub_date, lang) }}
-                </time>
-                <div class="chevron">
-                    <svg width="28" height="28" viewBox="0 0 20 20" fill="none"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
+                <div class="summary-meta">
+                    <div class="meta-left">
+                        <span v-if="item.topic" class="category">{{ translateTopic(item.topic) }}</span>
+                        <span class="source">{{ item.source }}</span>
+                    </div>
+                    <div class="meta-right">
+                        <time v-if="item.pub_date" :datetime="item.pub_date" :data-utc-time="item.pub_date" :data-lang="lang">
+                            {{ displayTime(item.pub_date, lang) }}
+                        </time>
+                        <div class="chevron" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -54,51 +54,64 @@ const { translateTopic } = useTopics(lang)
 .news-item {
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border-primary);
+    border-bottom: 3px solid var(--color-primary-light);
     border-radius: var(--radius-lg);
     overflow: hidden;
     transition: var(--transition-fast);
+    box-shadow: var(--shadow-sm);
 }
 
 .news-item:hover {
     box-shadow: var(--shadow-lg);
-    border-color: var(--color-primary-light);
 }
 
 .news-summary {
-    padding: var(--spacing-lg);
+    padding: 16px 18px 10px 18px;
     cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--spacing-md);
+    display: block;
 }
 
 .summary-content {
-    flex: 1;
+    width: 100%;
 }
 
 .summary-content h2.title {
-    font-size: 1.25rem;
-    line-height: 1.6;
+    margin: 0;
+    font-family: inherit;
+    font-size: clamp(1.2rem, 1.9vw, 1.7rem);
+    line-height: 1.2;
+    letter-spacing: -0.006em;
     color: var(--color-text-primary);
-    margin-top: var(--spacing-md);
+    font-weight: 700;
 }
 
 .summary-meta {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--spacing-md);
-    color: var(--color-text-muted);
-    font-size: 1.125rem;
-    white-space: nowrap;
-    padding-top: var(--spacing-xs);
+    margin-top: 12px;
+    font-size: 0.9rem;
+    color: var(--color-text-tertiary);
+    gap: 0.75rem;
+}
+
+.meta-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.meta-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .chevron {
-    transition: var(--transition-smooth);
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
+    transition: transform 0.2s ease;
 }
 
 .news-item.expanded .chevron {
@@ -111,31 +124,26 @@ const { translateTopic } = useTopics(lang)
     background: var(--color-bg-detail);
 }
 
-.news-item h2 {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-    margin: 0;
-    font-size: 1.25rem;
-    line-height: 1.6;
-    color: var(--color-text-primary);
-}
-
-.news-item h2 .category {
-    background: var(--gradient-primary);
-    color: white;
-    padding: var(--spacing-xs) 0.75rem;
+.category {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-tertiary);
+    padding: 0.1rem 0.4rem;
     border-radius: var(--radius-sm);
     font-weight: 600;
-    font-size: 0.875rem;
-    flex-shrink: 0;
+    font-size: 0.75rem;
 }
 
-.news-item h2 .source {
-    font-weight: 400;
+.source {
+    font-weight: 500;
     font-size: 0.95rem;
-    color: var(--color-text-secondary);
+    color: var(--color-text-tertiary);
+}
+
+time {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
 }
 
 .related-articles {
@@ -184,24 +192,17 @@ const { translateTopic } = useTopics(lang)
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
     .news-summary {
-        flex-direction: column;
-        gap: var(--spacing-sm);
-        padding: var(--spacing-md);
+        padding: 12px 14px 9px 14px;
     }
 
     .summary-meta {
-        width: 100%;
-        justify-content: space-between;
-        padding-top: 0;
+        margin-top: 8px;
+        font-size: 0.82rem;
     }
 
-    .news-item h2 {
-        font-size: 1.1rem;
-    }
-
-    .news-item h2 .category {
-        font-size: 0.8rem;
-        padding: 0.25rem 0.5rem;
+    .summary-content h2.title {
+        font-size: 1.35rem;
+        line-height: 1.2;
     }
 
     .news-details {
@@ -222,12 +223,13 @@ const { translateTopic } = useTopics(lang)
 }
 
 @media (max-width: 480px) {
-    .news-item h2 {
-        font-size: 1rem;
+    .summary-content h2.title {
+        font-size: 1.15rem;
+        line-height: 1.22;
     }
 
     .summary-meta {
-        font-size: 1rem;
+        font-size: 0.78rem;
     }
 }
 </style>
