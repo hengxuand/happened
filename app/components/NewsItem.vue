@@ -34,11 +34,10 @@
 <script setup lang="ts">
 import { useTopics } from '~/composables/useTopics'
 import { displayTime } from '~/utils/date'
-import type { NewsItem, SupportedLang } from '~/types'
+import type { NewsItem } from '~/types'
 
 const props = defineProps<{
     item: NewsItem
-    lang: SupportedLang
     expanded: boolean
 }>()
 
@@ -46,7 +45,8 @@ defineEmits<{
     toggle: [id: string]
 }>()
 
-const lang = computed(() => props.lang)
+const route = useRoute()
+const lang = computed(() => route.params.lang === 'en' ? 'en' : 'zh')
 const { translateTopic } = useTopics(lang)
 </script>
 

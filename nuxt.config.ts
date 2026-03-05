@@ -51,7 +51,7 @@ function getSitemapUrls(days = 30) {
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/supabase', '@nuxt/icon', '@nuxtjs/sitemap'],
+  modules: ['@nuxtjs/supabase', '@nuxt/icon', '@nuxtjs/sitemap', '@pinia/nuxt'],
   css: ['~/assets/css/theme.css'],
   runtimeConfig: {
     public: {

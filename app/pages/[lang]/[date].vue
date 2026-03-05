@@ -80,7 +80,6 @@
                 v-for="item in filteredNewsItems"
                 :key="item.id"
                 :item="item"
-                :lang="lang"
                 :expanded="isExpanded(item.id)"
                 @toggle="toggleItem"
             />
@@ -95,7 +94,9 @@
 <script setup lang="ts">
 import { useSeoHead } from '~/composables/useSeoHead'
 import { useTopics } from '~/composables/useTopics'
+import { useNewsUiStore } from '~/stores/newsUi'
 import type { NewsItem, SupportedLang } from '~/types'
+import { storeToRefs } from 'pinia'
 import logoLight from '~/assets/images/logo.svg'
 import logoDark from '~/assets/images/logo-dark.svg'
 import { getTodayDateString, getOffsetDateString, formatDisplayDate } from '~/utils/date'
@@ -109,6 +110,13 @@ const lang      = computed<SupportedLang>(() => route.params.lang === 'en' ? 'en
 const paramDate = computed(() => route.params.date as string)
 
 const { translateTopic } = useTopics(lang)
+const newsUiStore = useNewsUiStore()
+const { selectedCategory, searchQuery } = storeToRefs(newsUiStore)
+const { toggleItem, isExpanded, resetExpanded } = newsUiStore
+
+watch([paramDate, lang], () => {
+    resetExpanded()
+})
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -150,9 +158,6 @@ const { data: newsItems, pending, error } = await useAsyncData(
 
 // ─── Category & search filtering ─────────────────────────────────────────────
 
-const selectedCategory = ref<string | null>(null)
-const searchQuery      = ref('')
-
 const categories = computed<string[]>(() => {
     if (!newsItems.value) return []
     return [...new Set(
@@ -181,14 +186,6 @@ const getCategoryCount = (category: string): number =>
     newsItems.value?.filter(item => item.topic === category).length ?? 0
 
 // ─── Expand / collapse ────────────────────────────────────────────────────────
-
-const expandedItems = ref(new Set<string>())
-
-const toggleItem  = (id: string) => {
-    if (expandedItems.value.has(id)) expandedItems.value.delete(id)
-    else expandedItems.value.add(id)
-}
-const isExpanded = (id: string) => expandedItems.value.has(id)
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
 
