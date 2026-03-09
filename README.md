@@ -1,4 +1,4 @@
-# Happened.info (Daily Briefing)
+# Happened
 
 A minimalist, fast, and privacy-focused news aggregation service built with Nuxt 4. It fetches daily headlines from Google News RSS feeds and presents them in a clean, distraction-free interface.
 
