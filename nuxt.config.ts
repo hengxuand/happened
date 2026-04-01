@@ -84,8 +84,8 @@ export default defineNuxtConfig({
   },
   supabase: {
     redirect: false,
-    url: process.env.SUPABASE_URL || 'https://pmpfhubylpukgdbzwvpy.supabase.co',
-    key: process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtcGZodWJ5bHB1a2dkYnp3dnB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwOTg1MjMsImV4cCI6MjA3OTY3NDUyM30.REWKSCKdZZTG_F9SEYaJzU5uflBDbqqz0WUtcaMYh8M'
+    url: process.env.SUPABASE_URL,
+    key: process.env.SUPABASE_KEY
   },
   routeRules: {
     // Today's page: always fresh (SSR on every request)
