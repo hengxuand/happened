@@ -51,7 +51,7 @@ function getSitemapUrls(days = 30) {
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/supabase', '@nuxt/icon', '@nuxtjs/sitemap', '@pinia/nuxt'],
+  modules: ['@nuxtjs/supabase', '@nuxt/icon', '@nuxtjs/sitemap'],
   css: ['~/assets/css/theme.css'],
   runtimeConfig: {
     public: {
@@ -84,8 +84,9 @@ export default defineNuxtConfig({
   },
   supabase: {
     redirect: false,
-    url: process.env.SUPABASE_URL,
-    key: process.env.SUPABASE_KEY
+    // Prefer Nuxt public env vars; keep legacy names as fallback.
+    url: process.env.NUXT_PUBLIC_SUPABASE_URL,
+    key: process.env.NUXT_PUBLIC_SUPABASE_KEY
   },
   routeRules: {
     // Today's page: always fresh (SSR on every request)
