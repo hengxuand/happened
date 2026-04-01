@@ -112,6 +112,16 @@ const supabase = useSupabaseClient()
 const lang      = computed<SupportedLang>(() => route.params.lang === 'en' ? 'en' : 'zh')
 const paramDate = computed(() => route.params.date as string)
 
+const preferredLang = useCookie<SupportedLang>('preferred_lang', {
+    path: '/',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 365,
+})
+
+watch(lang, (nextLang) => {
+    preferredLang.value = nextLang
+}, { immediate: true })
+
 const { translateTopic } = useTopics(lang)
 const newsUiStore = useNewsUiStore()
 const { selectedCategory, searchQuery } = storeToRefs(newsUiStore)

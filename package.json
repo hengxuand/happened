@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
-    "build:yesterday": "node scripts/build-yesterday.js",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",

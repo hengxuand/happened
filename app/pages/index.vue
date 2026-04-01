@@ -8,9 +8,14 @@ const detectRequestLanguage = (): 'en' | 'zh' => {
     return acceptLanguage.includes('zh') ? 'zh' : 'en'
 }
 
-const lang = import.meta.server ? detectRequestLanguage() : detectBrowserLanguage()
+const preferredLang = useCookie<'en' | 'zh'>('preferred_lang')
+const savedLang = preferredLang.value === 'zh' || preferredLang.value === 'en'
+    ? preferredLang.value
+    : null
 
-// Redirect before paint to avoid a transient empty page where the footer can appear at the top.
+const lang = savedLang ?? (import.meta.server ? detectRequestLanguage() : detectBrowserLanguage())
+
+// Redirect before paint to avoid transient layout flashes.
 await navigateTo(`/${lang}/${getTodayDateString()}`, { replace: true })
 </script>
 
