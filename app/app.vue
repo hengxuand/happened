@@ -24,9 +24,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <div class="app-shell">
     <FeedbackBanner />
-    <NuxtPage />
+    <main class="app-main">
+      <NuxtPage />
+    </main>
     <Footer />
     <CookieBanner />
     <SpeedInsights />

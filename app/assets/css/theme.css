@@ -125,4 +125,26 @@ html {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   transition: background-color 0.25s ease, color 0.25s ease;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+#__nuxt {
+  min-height: 100%;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1 0 auto;
 }

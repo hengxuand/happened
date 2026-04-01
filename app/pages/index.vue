@@ -2,11 +2,16 @@
 import { getTodayDateString } from '~/utils/date';
 import { detectBrowserLanguage } from '~/utils/language';
 
-// Detect browser language and redirect to today's news page.
-onMounted(() => {
-    const lang = detectBrowserLanguage()
-    navigateTo(`/${lang}/${getTodayDateString()}`, { replace: true })
-})
+const detectRequestLanguage = (): 'en' | 'zh' => {
+    const headers = useRequestHeaders(['accept-language'])
+    const acceptLanguage = headers['accept-language']?.toLowerCase() ?? ''
+    return acceptLanguage.includes('zh') ? 'zh' : 'en'
+}
+
+const lang = import.meta.server ? detectRequestLanguage() : detectBrowserLanguage()
+
+// Redirect before paint to avoid a transient empty page where the footer can appear at the top.
+await navigateTo(`/${lang}/${getTodayDateString()}`, { replace: true })
 </script>
 
 <template>
