@@ -5,32 +5,13 @@
  * Conversion runs after each page finishes loading (via the `page:finish` hook) so it
  * always fires after Vue has fully rendered and hydrated the page — matching the original
  * `onMounted` timing that the inline `app.vue` logic relied on.
+ *
+ * The plugin also periodically updates relative times so they stay current while the user
+ * is on the page (e.g., "2 hours ago" becomes "3 hours ago" over time).
  */
+import {formatRelativeTime} from '~/utils/datetime'
+
 export default defineNuxtPlugin((nuxtApp) => {
-    type TimeUnit = { divisor: number; en: string; zh: string }
-
-    const TIME_UNITS: TimeUnit[] = [
-        { divisor: 31_536_000, en: 'year', zh: '年' },
-        { divisor: 2_592_000, en: 'month', zh: '个月' },
-        { divisor: 86_400, en: 'day', zh: '天' },
-        { divisor: 3_600, en: 'hour', zh: '小时' },
-        { divisor: 60, en: 'minute', zh: '分钟' },
-    ]
-
-    function formatRelativeTime(utcDateString: string, lang: string): string {
-        const seconds = Math.floor((Date.now() - new Date(utcDateString).getTime()) / 1000)
-
-        for (const { divisor, en, zh } of TIME_UNITS) {
-            const count = Math.floor(seconds / divisor)
-            if (count >= 1) {
-                return lang === 'zh-Hans'
-                    ? `${count}${zh}前`
-                    : `${count} ${en}${count > 1 ? 's' : ''} ago`
-            }
-        }
-
-        return lang === 'zh-Hans' ? '刚刚' : 'just now'
-    }
 
     function convertAllTimeElements(): void {
         document.querySelectorAll<HTMLElement>('time[data-utc-time]').forEach((el) => {
@@ -45,4 +26,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     // Run after every client-side navigation so newly rendered items are converted.
     nuxtApp.hook('page:finish', convertAllTimeElements)
+
+    // Periodically update relative times every 60 seconds to keep them current.
+    setInterval(convertAllTimeElements, 10_000)
 })
