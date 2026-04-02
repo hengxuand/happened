@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { parse } from "https://deno.land/x/xml@2.1.3/mod.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.28.0";
+import { createSupabaseServiceClient } from "shared/supabaseClient.ts";
 
 /* =======================
    Constants
@@ -26,20 +26,7 @@ const EN_RSS_URL_PATH = "?hl=en-US&gl=US&ceid=US:en";
    Supabase
 ======================= */
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
-  "SUPABASE_SERVICE_ROLE_KEY",
-);
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("Missing Supabase env vars");
-}
-
-const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY,
-  { auth: { persistSession: false } },
-);
+const supabase = createSupabaseServiceClient();
 
 /* =======================
    Edge Function
