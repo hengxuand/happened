@@ -23,13 +23,13 @@ export default defineNuxtPlugin((nuxtApp) => {
         for (const { divisor, en, zh } of TIME_UNITS) {
             const count = Math.floor(seconds / divisor)
             if (count >= 1) {
-                return lang === 'zh'
+                return lang === 'zh-Hans'
                     ? `${count}${zh}前`
                     : `${count} ${en}${count > 1 ? 's' : ''} ago`
             }
         }
 
-        return lang === 'zh' ? '刚刚' : 'just now'
+        return lang === 'zh-Hans' ? '刚刚' : 'just now'
     }
 
     function convertAllTimeElements(): void {

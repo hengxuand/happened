@@ -6,7 +6,7 @@
  * even though the actual content is in English.
  */
 
-export function useBrowserTranslation(lang: ComputedRef<'en' | 'zh'>) {
+export function useBrowserTranslation(lang: ComputedRef<'en' | 'zh-Hans'>) {
     useHead(
         computed(() => ({
             htmlAttrs: {

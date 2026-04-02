@@ -1,4 +1,4 @@
-export type SupportedLang = 'en' | 'zh'
+export type SupportedLang = 'en' | 'zh-Hans'
 
 export interface NewsItem {
     id: string

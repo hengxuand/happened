@@ -46,7 +46,7 @@ defineEmits<{
 }>()
 
 const route = useRoute()
-const lang = computed(() => route.params.lang === 'en' ? 'en' : 'zh')
+const lang = computed(() => route.params.lang === 'en' ? 'en' : 'zh-Hans')
 const { translateTopic } = useTopics(lang)
 </script>
 

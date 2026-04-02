@@ -8,7 +8,7 @@
                 </div>
                 <div class="header-controls">
                     <div class="lang-switcher">
-                        <NuxtLink :to="`/${paramDate}?translation=zh-Hans`" class="lang-button" :class="{ active: lang !== 'en' }">中文
+                        <NuxtLink :to="`/${paramDate}?translation=zh-Hans`" class="lang-button" :class="{ active: lang === 'zh-Hans' }">中文
                         </NuxtLink>
                         <NuxtLink :to="`/${paramDate}`" class="lang-button" :class="{ active: lang === 'en' }">English
                         </NuxtLink>
@@ -45,7 +45,7 @@
         <!-- Category Filter Bar -->
         <div v-if="!pending && !error && categories.length > 0" class="category-filter">
             <button @click="selectedCategory = null" class="filter-button"
-                :class="{ active: selectedCategory === null }">
+                :class="{ active: true }">
                 {{ lang === 'en' ? 'All' : '全部' }}
                 <span class="count">{{ newsItems?.length || 0 }}</span>
             </button>
@@ -111,7 +111,7 @@ const route    = useRoute()
 const supabase = useSupabaseClient()
 
 const paramDate = computed(() => route.params.date as string)
-const lang      = computed<SupportedLang>(() => route.query.translation === 'zh-Hans' ? 'zh' : 'en')
+const lang      = computed<SupportedLang>(() => route.query.translation === 'zh-Hans' ? 'zh-Hans' : 'en')
 
 const preferredLang = useCookie<SupportedLang>('preferred_lang', {
     path: '/',
@@ -149,7 +149,7 @@ const formattedCurrentDate = computed(() =>
 // ─── Navigation links with translation query param ────────────────────────────
 
 const buildDateLink = (date: string): string => {
-    return lang.value === 'zh' ? `/${date}?translation=zh-Hans` : `/${date}`
+    return lang.value === 'zh-Hans' ? `/${date}?translation=zh-Hans` : `/${date}`
 }
 
 const previousDateLink = computed(() => buildDateLink(previousDate.value))
