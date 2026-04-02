@@ -2,14 +2,15 @@
   <article :class="{ expanded: expanded }" class="news-item">
     <div class="news-summary" @click="$emit('toggle', item.id)">
       <div class="summary-content">
-        <h2 class="title">{{ item.title }}</h2>
+        <h2 class="title">{{ displayTitle }}</h2>
         <div class="summary-meta">
           <div class="meta-left">
             <span v-if="item.topic" class="category">{{ translateTopic(item.topic) }}</span>
             <span class="source">{{ item.source }}</span>
           </div>
           <div class="meta-right">
-            <time v-if="item.pub_date" :data-lang="lang" :data-utc-time="item.pub_date" :datetime="item.pub_date"></time>
+            <time v-if="item.pub_date" :data-lang="lang" :data-utc-time="item.pub_date"
+                  :datetime="item.pub_date"></time>
             <div aria-hidden="true" class="chevron">
               <svg fill="none" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -46,6 +47,8 @@ defineEmits<{
 const route = useRoute()
 const lang = computed(() => route.query.translation === 'zh-Hans' ? 'zh-Hans' : 'en')
 const {translateTopic} = useTopics(lang)
+
+const displayTitle = computed(() => lang.value === 'zh-Hans' && props.item.title_cn ? props.item.title_cn : props.item.title)
 </script>
 
 <style scoped>

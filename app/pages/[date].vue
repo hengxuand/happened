@@ -99,7 +99,6 @@
 
 <script lang="ts" setup>
 import {useSeoHead} from '~/composables/useSeoHead'
-import {useBrowserTranslation} from '~/composables/useBrowserTranslation'
 import {useTopics} from '~/composables/useTopics'
 import {useNewsUiStore} from '~/stores/newsUi'
 import type {NewsItem, SupportedLang} from '~/types'
@@ -220,10 +219,6 @@ const {isDark, toggle} = useTheme()
 // ─── SEO / hreflang ───────────────────────────────────────────────────────────
 
 useSeoHead(paramDate, lang, formattedCurrentDate)
-
-// ─── Browser translation ──────────────────────────────────────────────────────
-
-useBrowserTranslation(lang)
 
 </script>
 

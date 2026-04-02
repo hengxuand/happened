@@ -5,6 +5,7 @@ export interface NewsItem {
     topic: string
     language: string
     title: string
+    title_cn: string | null
     source: string
     pub_date: string
     guid: string
