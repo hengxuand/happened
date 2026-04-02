@@ -1,11 +1,6 @@
-/** Returns today's date as a YYYY-MM-DD string in local time. */
+/** Returns today's date as a YYYY-MM-DD string in UTC. */
 export function getTodayDateString(): string {
-    const d = new Date()
-    return [
-        d.getFullYear(),
-        String(d.getMonth() + 1).padStart(2, '0'),
-        String(d.getDate()).padStart(2, '0'),
-    ].join('-')
+    return new Date().toISOString().slice(0, 10)
 }
 
 /** Returns a new YYYY-MM-DD date string offset by `days` from the given date string. */

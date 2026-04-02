@@ -1,7 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 /**
- * Generates prerender routes for the last `days` days in all supported languages.
+ * Generates prerender routes for the last `days` days.
+ * Query parameters are not pre-rendered, so we only pre-render base dates.
+ * Translation is handled via query parameter (?translation=zh-Hans).
  * Pages beyond this window are generated on-demand via ISR.
  */
 function getPrerenderRoutes(days = 7): string[] {
@@ -11,17 +13,19 @@ function getPrerenderRoutes(days = 7): string[] {
     const d = new Date(today)
     d.setDate(today.getDate() - i)
     const dateStr = d.toISOString().split('T')[0]
-    routes.push(`/zh/${dateStr}`, `/en/${dateStr}`)
+    routes.push(`/${dateStr}`)
   }
   return routes
 }
 
 /**
- * Generates sitemap URLs for the last `days` days in all supported languages.
+ * Generates sitemap URLs for the last `days` days.
+ * Base URL (without query params) is canonical.
+ * Translation version via query parameter is marked as alternate.
  * Includes lastmod, changefreq and priority hints for crawlers.
  */
-function getSitemapUrls(days = 30) {
-  const urls = []
+function getSitemapUrls(days = 30): any {
+  const urls: any[] = []
   const today = new Date()
   for (let i = 0; i <= days; i++) {
     const d = new Date(today)
@@ -29,21 +33,19 @@ function getSitemapUrls(days = 30) {
     const dateStr = d.toISOString().split('T')[0]
     const priority = i === 0 ? 1.0 : i <= 7 ? 0.8 : 0.5
     const changefreq = i === 0 ? 'hourly' : i <= 7 ? 'daily' : 'weekly'
-    for (const lang of ['zh', 'en']) {
-      urls.push({
-        loc: `/${lang}/${dateStr}`,
-        lastmod: dateStr,
-        changefreq,
-        priority,
-        // hreflang alternates so the sitemap itself is bilingual-aware
-        alternatives: [
-          { hreflang: 'zh', href: `/zh/${dateStr}` },
-          { hreflang: 'zh-Hans', href: `/zh/${dateStr}` },
-          { hreflang: 'en', href: `/en/${dateStr}` },
-          { hreflang: 'x-default', href: `/en/${dateStr}` },
-        ]
-      })
-    }
+    // Base URL (default English)
+    urls.push({
+      loc: `/${dateStr}`,
+      lastmod: dateStr,
+      changefreq,
+      priority,
+      alternatives: [
+        { hreflang: 'en', href: `/${dateStr}` },
+        { hreflang: 'zh', href: `/${dateStr}?translation=zh-Hans` },
+        { hreflang: 'zh-Hans', href: `/${dateStr}?translation=zh-Hans` },
+        { hreflang: 'x-default', href: `/${dateStr}` },
+      ]
+    })
   }
   return urls
 }
@@ -89,8 +91,8 @@ export default defineNuxtConfig({
     key: process.env.NUXT_PUBLIC_SUPABASE_KEY
   },
   routeRules: {
-    // Today's page: always fresh (SSR on every request)
-    '/:lang(en|zh)/:date(\\d{4}-\\d{2}-\\d{2})': {
+    // All date pages: always fresh (SSR on every request)
+    '/:date(\\d{4}-\\d{2}-\\d{2})': {
       isr: 3600 // Revalidate every hour (3600 seconds)
     }
   },

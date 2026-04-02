@@ -8,9 +8,9 @@
                 </div>
                 <div class="header-controls">
                     <div class="lang-switcher">
-                        <NuxtLink :to="`/zh/${paramDate}`" class="lang-button" :class="{ active: lang !== 'en' }">中文
+                        <NuxtLink :to="`/${paramDate}?translation=zh-Hans`" class="lang-button" :class="{ active: lang !== 'en' }">中文
                         </NuxtLink>
-                        <NuxtLink :to="`/en/${paramDate}`" class="lang-button" :class="{ active: lang === 'en' }">English
+                        <NuxtLink :to="`/${paramDate}`" class="lang-button" :class="{ active: lang === 'en' }">English
                         </NuxtLink>
                     </div>
                     <button class="theme-toggle" @click="toggle" :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'" :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
@@ -20,7 +20,7 @@
             </div>
 
             <div class="date-navigation">
-                <NuxtLink :to="`/${lang}/${previousDate}`" class="nav-button">
+                <NuxtLink :to="previousDateLink" class="nav-button">
                     {{ lang === 'en' ? '← Previous Day' : '← 前一天' }}
                 </NuxtLink>
 
@@ -31,12 +31,12 @@
                     <div class="date-timezone-hint">
                         {{ lang === 'en' ? 'Date shown in UTC timezone' : '日期按 UTC 时区显示' }}
                     </div>
-                    <NuxtLink v-if="!isToday" :to="`/${lang}/${todayDate}`" class="today-link">
+                    <NuxtLink v-if="!isToday" :to="todayDateLink" class="today-link">
                         {{ lang === 'en' ? 'Jump to Today' : '回到今天' }}
                     </NuxtLink>
                 </div>
 
-                <NuxtLink :to="`/${lang}/${nextDate}`" class="nav-button" :class="{ disabled: isFuture }">
+                <NuxtLink :to="nextDateLink" class="nav-button" :class="{ disabled: isFuture }">
                     {{ lang === 'en' ? 'Next Day →' : '后一天 →' }}
                 </NuxtLink>
             </div>
@@ -110,8 +110,8 @@ import { getTodayDateString, getOffsetDateString, formatDisplayDate } from '~/ut
 const route    = useRoute()
 const supabase = useSupabaseClient()
 
-const lang      = computed<SupportedLang>(() => route.params.lang === 'en' ? 'en' : 'zh')
 const paramDate = computed(() => route.params.date as string)
+const lang      = computed<SupportedLang>(() => route.query.translation === 'zh-Hans' ? 'zh' : 'en')
 
 const preferredLang = useCookie<SupportedLang>('preferred_lang', {
     path: '/',
@@ -134,7 +134,7 @@ watch([paramDate, lang], () => {
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
-/** Today's date as YYYY-MM-DD (local time). */
+/** Today's date as YYYY-MM-DD (UTC). */
 const todayDate = computed(getTodayDateString)
 
 const isToday  = computed(() => paramDate.value === todayDate.value)
@@ -145,6 +145,18 @@ const nextDate            = computed(() => getOffsetDateString(paramDate.value, 
 const formattedCurrentDate = computed(() =>
     formatDisplayDate(paramDate.value, lang.value === 'en' ? 'en-US' : 'zh-CN')
 )
+
+// ─── Navigation links with translation query param ────────────────────────────
+
+const buildDateLink = (date: string): string => {
+    return lang.value === 'zh' ? `/${date}?translation=zh-Hans` : `/${date}`
+}
+
+const previousDateLink = computed(() => buildDateLink(previousDate.value))
+const nextDateLink     = computed(() => buildDateLink(nextDate.value))
+const todayDateLink    = computed(() => buildDateLink(todayDate.value))
+
+// ─── Data fetching ────────────────────────────────────────────────────────────
 
 const { data: newsItems, pending, error } = await useAsyncData(
     `news-${paramDate.value}`,
@@ -198,9 +210,15 @@ const filteredNewsItems = computed<NewsItem[]>(() => {
 const getCategoryCount = (category: string): number =>
     newsItems.value?.filter(item => item.topic === category).length ?? 0
 
+// ─── Theme ───────────────────────────────────────────────────────────────────
+
 const { isDark, toggle } = useTheme()
 
+// ─── SEO / hreflang ───────────────────────────────────────────────────────────
+
 useSeoHead(paramDate, lang, formattedCurrentDate)
+
+// ─── Browser translation ──────────────────────────────────────────────────────
 
 useBrowserTranslation(lang)
 
@@ -609,3 +627,4 @@ h1 {
     }
 }
 </style>
+

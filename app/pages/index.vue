@@ -15,8 +15,10 @@ const savedLang = preferredLang.value === 'zh' || preferredLang.value === 'en'
 
 const lang = savedLang ?? (import.meta.server ? detectRequestLanguage() : detectBrowserLanguage())
 
-// Redirect before paint to avoid transient layout flashes.
-await navigateTo(`/${lang}/${getTodayDateString()}`, { replace: true })
+// Redirect to today's date, with translation query param if Chinese preferred
+const path = `/${getTodayDateString()}`
+const finalPath = lang === 'zh' ? `${path}?translation=zh-Hans` : path
+await navigateTo(finalPath, { replace: true })
 </script>
 
 <template>
