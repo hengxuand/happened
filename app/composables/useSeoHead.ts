@@ -1,5 +1,5 @@
-import type { ComputedRef } from 'vue'
-import type { SupportedLang } from '~/types'
+import type {ComputedRef} from 'vue'
+import type {SupportedLang} from '~/types'
 
 export function useSeoHead(
     paramDate: ComputedRef<string>,
@@ -25,33 +25,33 @@ export function useSeoHead(
         const ogImage = `${siteUrl}/og-image.png`
 
         return {
-            htmlAttrs: { lang: isEn ? 'en' : 'zh-Hans' },
+            htmlAttrs: {lang: isEn ? 'en' : 'zh'},
             title: pageTitle,
             meta: [
-                { name: 'description', content: description },
+                {name: 'description', content: description},
                 // Open Graph
-                { property: 'og:title', content: pageTitle },
-                { property: 'og:description', content: description },
-                { property: 'og:url', content: canonical },
-                { property: 'og:type', content: 'website' },
-                { property: 'og:image', content: ogImage },
-                { property: 'og:locale', content: 'en_US' },
-                { property: 'og:locale:alternate', content: 'zh_CN' },
+                {property: 'og:title', content: pageTitle},
+                {property: 'og:description', content: description},
+                {property: 'og:url', content: canonical},
+                {property: 'og:type', content: 'website'},
+                {property: 'og:image', content: ogImage},
+                {property: 'og:locale', content: 'en_US'},
+                {property: 'og:locale:alternate', content: 'zh_CN'},
                 // Twitter / X Card
-                { name: 'twitter:card', content: 'summary_large_image' },
-                { name: 'twitter:title', content: pageTitle },
-                { name: 'twitter:description', content: description },
-                { name: 'twitter:image', content: ogImage },
+                {name: 'twitter:card', content: 'summary_large_image'},
+                {name: 'twitter:title', content: pageTitle},
+                {name: 'twitter:description', content: description},
+                {name: 'twitter:image', content: ogImage},
             ],
             link: [
                 // Canonical – always points to base URL (source of truth)
-                { rel: 'canonical', href: canonical },
+                {rel: 'canonical', href: canonical},
                 // hreflang alternates – tell Google about both language versions
-                { rel: 'alternate', hreflang: 'en', href: enUrl },
-                { rel: 'alternate', hreflang: 'zh', href: zhUrl },
-                { rel: 'alternate', hreflang: 'zh-Hans', href: zhUrl },
+                {rel: 'alternate', hreflang: 'en', href: enUrl},
+                {rel: 'alternate', hreflang: 'zh', href: zhUrl},
+                {rel: 'alternate', hreflang: 'zh-Hans', href: zhUrl},
                 // x-default: the fallback for users whose language is not explicitly listed
-                { rel: 'alternate', hreflang: 'x-default', href: enUrl },
+                {rel: 'alternate', hreflang: 'x-default', href: enUrl},
             ],
         }
     }))
