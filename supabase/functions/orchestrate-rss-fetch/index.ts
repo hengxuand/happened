@@ -169,18 +169,23 @@ async function insertGoogleNewsRssItems(
         description: i.google_rss_description,
     } satisfies GoogleNewsRssInsert));
 
-    log(`Upserting ${rows.length} row(s) into google_news_rss…`);
+    log(`Processing ${rows.length} item(s)…`);
 
-    // INSERT ... ON CONFLICT (guid) DO UPDATE SET title = EXCLUDED.title
-    // – new rows are inserted, existing guids get their title refreshed.
+    // INSERT ... ON CONFLICT (guid) DO NOTHING
+    // – new rows are inserted, existing guids are silently skipped.
+    // .select() uses RETURNING under the hood, which with DO NOTHING only
+    // returns the rows that were actually inserted (not the skipped ones).
     // Requires a UNIQUE constraint on the guid column.
-    const {error} = await supabase
+    const {data: inserted, error} = await supabase
         .from("google_news_rss")
-        .upsert(rows, {onConflict: "guid"});
+        .upsert(rows, {onConflict: "guid", ignoreDuplicates: true})
+        .select("guid");
 
     if (error) throw new Error(`DB upsert failed: ${error.message}`);
 
-    log(`Upserted ${rows.length} row(s) ✓`);
+    const insertedCount = inserted?.length ?? 0;
+    const skippedCount = rows.length - insertedCount;
+    log(`DB: ${insertedCount} inserted, ${skippedCount} duplicate(s) ignored`);
 }
 
 /* =======================
