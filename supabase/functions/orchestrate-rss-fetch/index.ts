@@ -122,19 +122,43 @@ async function processTopic(
    RSS Fetch
 ======================= */
 
-async function fetchRssXml(url: string): Promise<string> {
-    const res = await fetch(url, {
-        headers: {
-            "User-Agent": "Mozilla/5.0",
-            Accept: "application/rss+xml, application/xml",
-        },
-    });
+const RETRYABLE_STATUSES = new Set([429, 502, 503, 504]);
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 500;
 
-    if (!res.ok) {
-        throw new Error(`RSS fetch failed: ${res.status}`);
+async function fetchRssXml(url: string): Promise<string> {
+    let lastStatus = 0;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        if (attempt > 0) {
+            // Exponential backoff: 500ms, 1000ms, 2000ms
+            const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+            await new Promise((r) => setTimeout(r, delay));
+        }
+
+        const res = await fetch(url, {
+            headers: {
+                "User-Agent": "Mozilla/5.0",
+                Accept: "application/rss+xml, application/xml",
+            },
+        });
+
+        if (res.ok) {
+            return await res.text();
+        }
+
+        lastStatus = res.status;
+
+        if (!RETRYABLE_STATUSES.has(res.status)) {
+            // Non-transient error – fail immediately
+            throw new Error(`RSS fetch failed: ${res.status}`);
+        }
+
+        // Transient error – consume body to free the connection before retrying
+        await res.text().catch(() => {});
     }
 
-    return await res.text();
+    throw new Error(`RSS fetch failed after ${MAX_RETRIES} retries: ${lastStatus}`);
 }
 
 /* =======================
