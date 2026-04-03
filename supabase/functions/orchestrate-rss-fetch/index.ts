@@ -205,7 +205,7 @@ function parseGoogleNewsRss(xml: string) {
             title: extractTitle(i.title),
             source: extractSource(i.source, extractText(i.description)),
             google_link: extractText(i.link),
-            pub_date: extractText(i.pubDate),
+            pub_date: parseRssDate(i.pubDate),
             google_rss_description: extractRssDescription(i.description),
         };
     });
@@ -250,8 +250,15 @@ function extractSource(sourceNode: unknown, description: string | null) {
     return null;
 }
 
-function extractRssDescription(node: unknown) {
+function parseRssDate(node: unknown): string | null {
     const text = extractText(node);
+    if (!text) return null;
+    const date = new Date(text);
+    if (isNaN(date.getTime())) return null;
+    return date.toISOString();
+}
+
+function extractRssDescription(node: unknown) {    const text = extractText(node);
     if (!text) return null;
     if (!text.includes("<strong")) return text;
     return text.replaceAll(/<strong\b[^>]*>[\s\S]*?<\/strong>/gi, "");
