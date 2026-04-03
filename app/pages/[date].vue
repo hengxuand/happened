@@ -8,9 +8,9 @@
         </div>
         <div class="header-controls">
           <div class="lang-switcher">
-            <NuxtLink :class="{ active: lang === 'zh-Hans' }" :to="`/${paramDate}?translation=zh-Hans`"
-                      class="lang-button">中文
-            </NuxtLink>
+            <!--            <NuxtLink :class="{ active: lang === 'zh-Hans' }" :to="`/${paramDate}?translation=zh-Hans`"-->
+            <!--                      class="lang-button">中文-->
+            <!--            </NuxtLink>-->
             <NuxtLink :class="{ active: lang === 'en' }" :to="`/${paramDate}`" class="lang-button">English
             </NuxtLink>
           </div>
