@@ -1,5 +1,5 @@
-import type { ComputedRef } from 'vue'
-import type { SupportedLang } from '~/types'
+import type {ComputedRef} from 'vue'
+import type {SupportedLang} from '~/types'
 
 /** Maps English topic keys to their Chinese display labels. */
 const TOPIC_LABELS_ZH: Record<string, string> = {
@@ -18,11 +18,10 @@ const TOPIC_LABELS_ZH: Record<string, string> = {
  * Provides topic translation helpers for the given reactive language.
  */
 export function useTopics(lang: ComputedRef<SupportedLang>) {
-    console.log('useTopics called with lang:', lang.value)
     const translateTopic = (topic: string): string => {
         if (lang.value === 'zh-Hans') return TOPIC_LABELS_ZH[topic] ?? topic
         return topic
     }
 
-    return { translateTopic }
+    return {translateTopic}
 }
