@@ -174,6 +174,7 @@ const {data: newsItems, pending, error} = await useAsyncData(
           .eq('language', 'en')
           .gte('pub_date', startOfDay)
           .lte('pub_date', endOfDay)
+          .or('importance_score.gte.55,importance_score.is.null')
           .order('pub_date', {ascending: false})
 
       if (error) {
