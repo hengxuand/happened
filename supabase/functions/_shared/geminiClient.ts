@@ -17,7 +17,7 @@ export function createGeminiModel(options?: {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     return genAI.getGenerativeModel({
-        model: options?.model ?? "gemini-3.1-flash-lite",
+        model: options?.model ?? "gemini-flash-lite-latest",
         generationConfig: {
             responseMimeType: options?.responseMimeType ?? "application/json",
             temperature: options?.temperature ?? 0.2,

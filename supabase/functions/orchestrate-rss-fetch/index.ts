@@ -1,6 +1,7 @@
 import {serve} from "https://deno.land/std@0.177.0/http/server.ts";
 import {parse} from "https://deno.land/x/xml@2.1.3/mod.ts";
 import {createSupabaseServiceClient} from "shared/supabaseClient.ts";
+import type {GoogleNewsRssInsert} from "shared/types.ts";
 
 /* =======================
    Constants
@@ -165,16 +166,6 @@ async function fetchRssXml(url: string): Promise<string> {
    DB Insert
 ======================= */
 
-type GoogleNewsRssInsert = {
-    topic: string;
-    language: string;
-    title: string;
-    source: string;
-    pub_date: string;
-    guid: string;
-    link?: string | null;
-    description?: string | null;
-};
 
 async function insertGoogleNewsRssItems(
     topic: string,
