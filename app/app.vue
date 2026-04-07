@@ -1,11 +1,9 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 // Relative time conversion for <time data-utc-time="..."> elements is handled
 // by the relativeTime.client plugin (app/plugins/relativeTime.client.ts).
-import { SpeedInsights } from '@vercel/speed-insights/nuxt'
-import { Analytics } from '@vercel/analytics/nuxt'
-import { useTheme } from './composables/useTheme'
+import {useTheme} from './composables/useTheme'
 
-const { init } = useTheme()
+const {init} = useTheme()
 
 // Prevent flash of wrong theme: inject a synchronous inline script that reads
 // localStorage / prefers-color-scheme and sets data-theme before first paint.
@@ -25,13 +23,11 @@ onMounted(() => {
 
 <template>
   <div class="app-shell">
-    <FeedbackBanner />
+    <FeedbackBanner/>
     <main class="app-main">
-      <NuxtPage />
+      <NuxtPage/>
     </main>
-    <Footer />
-    <CookieBanner />
-    <SpeedInsights />
-    <Analytics />
+    <Footer/>
+    <CookieBanner/>
   </div>
 </template>
