@@ -46,7 +46,7 @@
 
     <!-- Category Filter Bar -->
     <div v-if="!pending && !error && categories.length > 0" class="category-filter">
-      <button :class="{ active: true }" class="filter-button"
+      <button :class="{ active: !selectedCategory }" class="filter-button"
               @click="selectedCategory = null">
         {{ lang === 'en' ? 'All' : '全部' }}
         <span class="count">{{ newsItems?.length || 0 }}</span>
