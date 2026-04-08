@@ -178,7 +178,7 @@ watch([paramDate, lang], () => {
 const todayDate = computed(getTodayDateString)
 
 const isToday = computed(() => paramDate.value === todayDate.value)
-const isFuture = computed(() => paramDate.value > todayDate.value)
+const isFuture = computed(() => paramDate.value >= todayDate.value)
 
 // ─── Route guard: redirect invalid dates to today ─────────────────────────────
 
