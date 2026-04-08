@@ -7,7 +7,7 @@ import type {GoogleNewsRss} from "../_shared/types.ts";
 const supabase = createSupabaseServiceClient();
 const model = createGeminiModel();
 
-serve(async (req) => {
+serve(async (_req: Request) => {
     const requestId = crypto.randomUUID().slice(0, 8);
     const start = Date.now();
 
@@ -44,11 +44,18 @@ serve(async (req) => {
       
       SCORING RULES:
       1. Score the news strictly within its own 'topic' category. (A major tech news should get 90+ in TECHNOLOGY, even if it's not globally important).
-      2. Evaluate the impact based on the 'language' audience ('zh' for Chinese readers, 'en' for English readers).
-      3. Filter out clickbait or gossip (score them below 30).
-      4. There are different titles in the description field, compare them with the existing title of each news item. If the description contains a more eye-catching title, replace the existing title with the new one.
+      2. Consider the source's credibility and influence in its field (e.g., a well-known tech blog vs. a small personal blog).
+      3. Evaluate the impact based on the 'language' audience ('zh' for Chinese readers, 'en' for English readers).
+      4. Filter out clickbait or gossip (score them below 30).
       
-      Return ONLY a JSON array of objects containing "id", "score" (number), and "title" (string).
+      Actions must be performed in the following order:
+      1. There are different titles in the description field, compare them with the existing title of each news item. If the description contains a more eye-catching title, replace the existing title with the new one and the source as well. If not, keep the original title and source.
+      2. Score the news based on the above rules.
+      
+      Forbid the following actions:
+      1. Don't perform any translation at any place(Keep the original language).
+      
+      Return ONLY a JSON array of objects in the same format as the input data. set the importance_score field with the score you give, and if you change the title, also update the title field and the source field.
     `;
 
         log("Sending request to Gemini…");
@@ -58,23 +65,38 @@ serve(async (req) => {
         const result = await model.generateContent(prompt);
         log(`Gemini responded in ${Date.now() - aiStart}ms`);
 
-        const responseText = result.response.text();
-        const scoredItems = JSON.parse(responseText); // 形如: [{"id": "uuid-1", "score": 85}, ...]
+        const responseText: string = result.response.text();
+        const scoredItems = JSON.parse(responseText) as GoogleNewsRss[];
         log(`Parsed ${scoredItems.length} scored item(s) from Gemini`);
 
-        const newsMap = new Map(pendingNews.map(n => [n.id, n]));
+        const newsMap = new Map<string, GoogleNewsRss>(
+            (pendingNews as GoogleNewsRss[]).map(n => [n.id, n])
+        );
         const updates: GoogleNewsRss[] = scoredItems
-            .map((item: { id: string; score: number; title: string }) => {
-                const row = newsMap.get(item.id);
-                if (!row) return null;
+            .map((item: GoogleNewsRss): GoogleNewsRss | null => {
+                const row: GoogleNewsRss | undefined = newsMap.get(item.id);
+                if (!row) {
+                    log(`  [skip] id=${item.id} – not found in original batch`);
+                    return null;
+                }
+
+                const titleChanged: boolean = item.title !== row.title;
+                const sourceChanged: boolean = item.source !== row.source;
+                log(
+                    `  [score] id=${item.id} score=${item.importance_score}` +
+                    (titleChanged ? ` | title: "${row.title}" → "${item.title}"` : '') +
+                    (sourceChanged ? ` | source: "${row.source}" → "${item.source}"` : '')
+                );
+
                 return {
                     ...row,
-                    importance_score: item.score,
+                    importance_score: item.importance_score,
                     title: item.title,
+                    source: item.source,
                     importance_scored_at: new Date().toISOString(),
                 };
             })
-            .filter(Boolean);
+            .filter((item): item is GoogleNewsRss => item !== null);
 
         log(`Writing ${updates.length} score(s) to DB…`);
         const dbStart = Date.now();
@@ -91,9 +113,10 @@ serve(async (req) => {
             processedCount: updates.length
         }), {headers: {"Content-Type": "application/json"}});
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+        const message: string = err instanceof Error ? err.message : String(err);
         error(`Scoring failed after ${Date.now() - start}ms`, err);
-        return new Response(JSON.stringify({error: err.message}), {
+        return new Response(JSON.stringify({error: message}), {
             status: 500, headers: {"Content-Type": "application/json"}
         });
     }
