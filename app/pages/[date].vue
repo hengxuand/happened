@@ -33,7 +33,7 @@
           <div class="date-timezone-hint">
             {{ lang === 'en' ? 'Date shown in UTC timezone' : '日期按 UTC 时区显示' }}
           </div>
-          <NuxtLink v-if="!isToday" :to="todayDateLink" class="today-link">
+          <NuxtLink :class="{ 'today-link--hidden': isToday }" :to="todayDateLink" class="today-link">
             {{ lang === 'en' ? 'Jump to Today' : '回到今天' }}
           </NuxtLink>
         </div>
@@ -344,6 +344,14 @@ h1 {
   color: var(--color-link);
   text-decoration: none;
   font-weight: 500;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.today-link--hidden {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .date-timezone-hint {
@@ -352,8 +360,9 @@ h1 {
   text-align: center;
 }
 
-.today-link:hover {
-  text-decoration: underline;
+.today-link--hidden {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .nav-button {
