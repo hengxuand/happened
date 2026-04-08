@@ -97,9 +97,11 @@ export default defineNuxtConfig({
     }
   },
   nitro: {
-    // Use the aws-amplify preset when building for production on Amplify.
-    // Override locally with NITRO_PRESET=node-server (or leave unset).
-    preset: process.env.NITRO_PRESET ?? (process.env.NODE_ENV === 'production' ? 'aws-amplify' : undefined),
+    // Preset is injected by the build environment:
+    //   - Amplify: NITRO_PRESET=aws-amplify  (set in amplify.yml)
+    //   - Local dev: leave unset (auto-detects node-server)
+    // Falls back to undefined so local `nuxt dev` / `nuxt build` is unaffected.
+    preset: process.env.NITRO_PRESET,
     prerender: {
       crawlLinks: false,
       routes: getPrerenderRoutes()
