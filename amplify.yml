@@ -7,6 +7,9 @@ frontend:
         - npx --yes nypm i
     build:
       commands:
+        # Explicitly set the Nitro preset so the build always targets Amplify
+        # regardless of how NODE_ENV is set on the branch.
+        - export NITRO_PRESET=aws-amplify
         - npm run build
   artifacts:
     # The aws-amplify Nitro preset outputs to .amplify-hosting/
@@ -16,5 +19,6 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
-      - .nuxt/**/*
+      # Do NOT cache .nuxt – stale generated types can break SSR Lambda.
+      # - .nuxt/**/*
 

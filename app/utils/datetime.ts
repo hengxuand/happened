@@ -1,3 +1,17 @@
+export const MIN_VALID_DATE = '2025-12-03'
+
+/**
+ * Returns true if `date` is a valid YYYY-MM-DD string within the
+ * supported range [MIN_VALID_DATE, today (UTC)].
+ */
+export function isValidAppDate(date: string): boolean {
+    return (
+        /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+        date >= MIN_VALID_DATE &&
+        date <= getTodayDateString()
+    )
+}
+
 /** Returns today's date as a YYYY-MM-DD string in UTC. */
 export function getTodayDateString(): string {
     return new Date().toISOString().slice(0, 10)

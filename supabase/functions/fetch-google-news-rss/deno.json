@@ -1,9 +1,0 @@
-{
-  "imports": {
-    "shared/": "../_shared/"
-  },
-  "compilerOptions": {
-    "lib": ["ESNext"]
-  }
-}
-

@@ -1,5 +1,6 @@
 <template>
   <div class="container">
+    <div v-if="showDatePicker" class="picker-backdrop" @click="showDatePicker = false"/>
     <div class="header">
       <div class="header-top">
         <div class="logo">
@@ -22,24 +23,55 @@
       </div>
 
       <div class="date-navigation">
-        <NuxtLink :to="previousDateLink" class="nav-button">
-          {{ lang === 'en' ? '← Previous Day' : '← 前一天' }}
+        <NuxtLink :to="previousDateLink" class="nav-button nav-button--prev">
+          <Icon class="nav-icon" name="lucide:chevron-left" size="18"/>
+          <span>{{ lang === 'en' ? 'Previous Day' : '前一天' }}</span>
         </NuxtLink>
 
         <div class="center-group">
-          <div class="current-date">
-            {{ formattedCurrentDate }}
-          </div>
+          <button
+              :aria-expanded="showDatePicker"
+              :title="lang === 'en' ? 'Pick a date' : '选择日期'"
+              aria-haspopup="dialog"
+              class="current-date"
+              @click="toggleDatePicker"
+          >
+            <span>{{ formattedCurrentDate }}</span>
+            <Icon class="date-cal-icon" name="lucide:calendar" size="15"/>
+          </button>
+
+          <Transition name="picker-pop">
+            <div v-if="showDatePicker" class="date-picker-popover" role="dialog">
+              <div class="date-picker-label">
+                <Icon name="lucide:calendar-days" size="13"/>
+                {{
+                  lang === 'en' ? `Jump to date (after ${MIN_VALID_DATE})` : '跳转到日期'
+                }}
+              </div>
+              <input
+                  ref="dateInputRef"
+                  :max="todayDate"
+                  :min="MIN_VALID_DATE"
+                  :value="paramDate"
+                  class="date-picker-input"
+                  type="date"
+                  @change="onDatePicked"
+              />
+            </div>
+          </Transition>
+
           <div class="date-timezone-hint">
             {{ lang === 'en' ? 'Date shown in UTC timezone' : '日期按 UTC 时区显示' }}
           </div>
-          <NuxtLink v-if="!isToday" :to="todayDateLink" class="today-link">
+          <NuxtLink :class="{ 'today-link--hidden': isToday }" :to="todayDateLink" class="today-link">
+            <Icon class="today-icon" name="lucide:fast-forward" size="13"/>
             {{ lang === 'en' ? 'Jump to Today' : '回到今天' }}
           </NuxtLink>
         </div>
 
-        <NuxtLink :class="{ disabled: isFuture }" :to="nextDateLink" class="nav-button">
-          {{ lang === 'en' ? 'Next Day →' : '后一天 →' }}
+        <NuxtLink :class="{ disabled: isFuture }" :to="nextDateLink" class="nav-button nav-button--next">
+          <span>{{ lang === 'en' ? 'Next Day' : '后一天' }}</span>
+          <Icon class="nav-icon" name="lucide:chevron-right" size="18"/>
         </NuxtLink>
       </div>
     </div>
@@ -105,7 +137,13 @@ import type {NewsItem, SupportedLang} from '~/types'
 import {storeToRefs} from 'pinia'
 import logoLight from '~/assets/images/logo.svg'
 import logoDark from '~/assets/images/logo-dark.svg'
-import {formatDisplayDate, getOffsetDateString, getTodayDateString} from '~/utils/datetime'
+import {
+  formatDisplayDate,
+  getOffsetDateString,
+  getTodayDateString,
+  isValidAppDate,
+  MIN_VALID_DATE
+} from '~/utils/datetime'
 
 // ─── Route & reactive state ───────────────────────────────────────────────────
 
@@ -140,7 +178,13 @@ watch([paramDate, lang], () => {
 const todayDate = computed(getTodayDateString)
 
 const isToday = computed(() => paramDate.value === todayDate.value)
-const isFuture = computed(() => paramDate.value > todayDate.value)
+const isFuture = computed(() => paramDate.value >= todayDate.value)
+
+// ─── Route guard: redirect invalid dates to today ─────────────────────────────
+
+if (!isValidAppDate(paramDate.value)) {
+  await navigateTo(`/${todayDate.value}`, {replace: true})
+}
 
 const previousDate = computed(() => getOffsetDateString(paramDate.value, -1))
 const nextDate = computed(() => getOffsetDateString(paramDate.value, +1))
@@ -216,6 +260,49 @@ const getCategoryCount = (category: string): number =>
 // ─── Theme ───────────────────────────────────────────────────────────────────
 
 const {isDark, toggle} = useTheme()
+
+// ─── Date picker popover ──────────────────────────────────────────────────────
+
+const router = useRouter()
+const showDatePicker = ref(false)
+const dateInputRef = ref<HTMLInputElement | null>(null)
+
+const toggleDatePicker = async () => {
+  showDatePicker.value = !showDatePicker.value
+  if (showDatePicker.value) {
+    await nextTick()
+    dateInputRef.value?.focus()
+    dateInputRef.value?.showPicker?.()
+  }
+}
+
+const onDatePicked = (e: Event) => {
+  const date = (e.target as HTMLInputElement).value
+  const isValid = isValidAppDate(date)
+
+  if (!isValid) return
+
+  showDatePicker.value = false
+  if (date !== paramDate.value) {
+    router.push(buildDateLink(date))
+  }
+}
+
+// Close picker on Escape key
+watch(showDatePicker, (val) => {
+  if (val) {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') showDatePicker.value = false
+    }
+    document.addEventListener('keydown', onKey)
+    const stop = watch(showDatePicker, (v) => {
+      if (!v) {
+        document.removeEventListener('keydown', onKey)
+        stop()
+      }
+    })
+  }
+})
 
 // ─── SEO / hreflang ───────────────────────────────────────────────────────────
 
@@ -325,10 +412,43 @@ h1 {
 }
 
 .current-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--color-text-primary);
-  text-align: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+  font-family: inherit;
+}
+
+.current-date:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-primary);
+}
+
+.current-date:active {
+  transform: scale(0.97);
+}
+
+.current-date:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.date-cal-icon {
+  opacity: 0.45;
+  flex-shrink: 0;
+  transition: opacity 0.18s ease;
+}
+
+.current-date:hover .date-cal-icon {
+  opacity: 0.85;
 }
 
 .center-group {
@@ -336,14 +456,122 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
+  position: relative;
+}
+
+/* ── Date picker popover ────────────────────────────────────────────────────── */
+
+.picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.date-picker-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 220px;
+}
+
+.date-picker-label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.date-picker-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  color-scheme: light dark;
+}
+
+.date-picker-input:focus {
+  outline: none;
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Popover enter/leave transition ─────────────────────────────────────────── */
+
+.picker-pop-enter-active,
+.picker-pop-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.picker-pop-enter-from,
+.picker-pop-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-6px) scale(0.97);
 }
 
 .today-link {
-  font-size: 0.875rem;
-  color: var(--color-link);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
   text-decoration: none;
   font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-secondary);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease, visibility 0.3s ease, background 0.18s ease,
+  border-color 0.18s ease, color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.today-link:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-primary-light);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.today-link:active {
+  transform: scale(0.96);
+  box-shadow: none;
+}
+
+.today-link:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.today-link--hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .date-timezone-hint {
@@ -352,26 +580,53 @@ h1 {
   text-align: center;
 }
 
-.today-link:hover {
-  text-decoration: underline;
-}
-
 .nav-button {
-  padding: 0.75rem var(--spacing-lg);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem var(--spacing-md);
   background: var(--gradient-primary);
   color: white;
   text-decoration: none;
   border-radius: var(--radius-md);
   font-weight: 500;
-  transition: var(--transition-fast);
+  font-size: 0.9rem;
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease, opacity 0.15s ease;
   white-space: nowrap;
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
 }
 
 .nav-button:hover:not(.disabled) {
   background: var(--gradient-primary-hover);
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+}
+
+.nav-button:active:not(.disabled) {
+  transform: translateY(0) scale(0.97);
+  box-shadow: var(--shadow-sm);
+  opacity: 0.9;
+}
+
+.nav-button:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 3px;
+}
+
+.nav-button .nav-icon {
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.nav-button--prev:hover:not(.disabled) .nav-icon {
+  transform: translateX(-3px);
+}
+
+.nav-button--next:hover:not(.disabled) .nav-icon {
+  transform: translateX(3px);
 }
 
 .nav-button.disabled {
@@ -379,6 +634,7 @@ h1 {
   cursor: not-allowed;
   pointer-events: none;
   box-shadow: none;
+  opacity: 0.6;
 }
 
 .loading,
@@ -563,8 +819,8 @@ h1 {
 
   .nav-button {
     width: 100%;
-    text-align: center;
-    padding: 0.75rem var(--spacing-md);
+    justify-content: center;
+    padding: 0.65rem var(--spacing-md);
   }
 
   .center-group {
