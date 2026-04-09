@@ -20,7 +20,7 @@ serve(async (_req: Request) => {
             .select('*')
             .is('importance_score', null)
             .order('pub_date', {ascending: false})
-            .limit(5)
+            .limit(20)
             .returns<GoogleNewsRss[]>();
 
         if (fetchError) throw fetchError;
@@ -74,9 +74,6 @@ Return ONLY a valid JSON object with this exact structure (no other text whatsoe
       "title": "...",           // possibly updated
       "source": "...",          // possibly updated
       "pub_date": "...",
-      "guid": "...",
-      "link": "...",
-      "description": "...",
       "importance_score": 85,   // MUST be an integer between 1 and 100
       "importance_scored_at": null,
       "updated_at": null,
@@ -117,6 +114,8 @@ Return ONLY a valid JSON object with this exact structure (no other text whatsoe
         const data = await res.json();
         const responseText: string = data.choices?.[0]?.message?.content ?? "";
         log(`Grok responded in ${Date.now() - aiStart}ms`);
+        log(`ResponseText from Grok: ${responseText}`);
+        log(`Length: ${responseText.length} bytes`);
 
         // ==================== 解析 & 处理 ====================
         const parsed = JSON.parse(responseText) as { scored_news: GoogleNewsRss[] };
