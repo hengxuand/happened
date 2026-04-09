@@ -20,7 +20,7 @@ export function useSeoHead(
 
         // Always use English title and description since content is English
         const pageTitle = `World News – ${formattedCurrentDate.value} | Happened.info`
-        const description = `A curated daily digest of global news headlines for ${formattedCurrentDate.value}. Read today's top stories in English.`
+        const description = `A curated daily digest of global news headlines for ${formattedCurrentDate.value}. Read today's top stories.`
 
         const ogImage = `${siteUrl}/og-image.png`
 
