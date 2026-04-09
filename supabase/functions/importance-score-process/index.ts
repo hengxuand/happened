@@ -20,7 +20,7 @@ serve(async (_req: Request) => {
             .select('*')
             .is('importance_score', null)
             .order('pub_date', {ascending: false})
-            .limit(20)
+            .limit(5)
             .returns<GoogleNewsRss[]>();
 
         if (fetchError) throw fetchError;
@@ -109,10 +109,11 @@ Return ONLY a valid JSON object with this exact structure (no other text whatsoe
         });
 
         if (!res.ok) {
+            console.error("Grok API error:", res.status, res.statusText);
             const errText = await res.text();
             throw new Error(`Grok API error ${res.status}: ${errText}`);
         }
-
+        console.log("Grok API response:", res.status, res.statusText);
         const data = await res.json();
         const responseText: string = data.choices?.[0]?.message?.content ?? "";
         log(`Grok responded in ${Date.now() - aiStart}ms`);
