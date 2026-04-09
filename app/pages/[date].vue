@@ -621,6 +621,7 @@ h1 {
   transition: transform 0.18s ease;
 }
 
+
 .nav-button--prev:hover:not(.disabled) .nav-icon {
   transform: translateX(-3px);
 }
@@ -666,7 +667,7 @@ h1 {
   padding-bottom: var(--spacing-lg);
   background: var(--color-bg-primary);
   border: none;
-  border-bottom: 3px solid var(--color-border-primary);
+  border-bottom: 3px solid var(--color-secondary);
   margin-bottom: var(--spacing-xl);
 }
 
@@ -692,9 +693,9 @@ h1 {
 }
 
 .filter-button.active {
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-dark) 100%);
   color: white;
-  border-color: var(--color-primary);
+  border-color: var(--color-secondary-dark);
   box-shadow: var(--shadow-sm);
 }
 

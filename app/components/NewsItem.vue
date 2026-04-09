@@ -131,12 +131,14 @@ const relativeTime = computed(() =>
 }
 
 .category {
-  background: var(--color-bg-secondary);
-  color: var(--color-text-tertiary);
-  padding: 0.1rem 0.4rem;
+  background: var(--color-secondary);
+  color: #ffffff;
+  padding: 0.1rem 0.5rem;
   border-radius: var(--radius-sm);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .source {
