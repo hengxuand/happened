@@ -19,6 +19,7 @@ serve(async (_req: Request) => {
             .from('google_news_rss')
             .select('*')
             .is('importance_score', null)
+            .gte('pub_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // 最近7天内的新闻
             .order('pub_date', {ascending: false})
             .limit(20)
             .returns<GoogleNewsRss[]>();
