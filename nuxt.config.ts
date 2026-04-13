@@ -98,7 +98,7 @@ export default defineNuxtConfig({
   },
   nitro: {
     // Preset is injected by the build environment:
-    //   - Amplify: NITRO_PRESET=aws-amplify  (set in amplify.yml)
+    //   - Vercel: auto-detected, or set NITRO_PRESET=vercel in Vercel env vars
     //   - Local dev: leave unset (auto-detects node-server)
     // Falls back to undefined so local `nuxt dev` / `nuxt build` is unaffected.
     preset: process.env.NITRO_PRESET,
