@@ -557,9 +557,8 @@ Deno.serve(async (_req: Request) => {
       for (const [originalUrl, decodedUrl] of decodedMap.entries()) {
         const meta = metadataByHref.get(originalUrl);
         log(
-          `Row ${row.id}: title=${meta?.title ?? "unknown"}, source=${meta?.source ?? "unknown"}, decoded_url=${decodedUrl}`,
+          `Row ${row.id}: title=${meta?.title ?? "unknown"}, source=${meta?.source ?? "unknown"}, decoded_url=${decodedUrl}, original_url=${originalUrl}`,
         );
-        log(`Row ${row.id}: original_url=${originalUrl}`);
       }
 
       const allDecoded = totalGoogleLinks === successCount &&

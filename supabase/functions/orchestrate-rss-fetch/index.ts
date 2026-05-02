@@ -180,7 +180,6 @@ async function insertGoogleNewsRssItems(
         source: i.source || "",
         pub_date: i.pub_date || new Date().toISOString(),
         guid: i.guid,
-        link: i.google_link,
         description: i.google_rss_description,
     } satisfies GoogleNewsRssInsert));
 
@@ -219,7 +218,6 @@ function parseGoogleNewsRss(xml: string) {
             guid: extractGuid(i.guid),
             title: extractTitle(i.title),
             source: extractSource(i.source, extractText(i.description)),
-            google_link: extractText(i.link),
             pub_date: parseRssDate(i.pubDate),
             google_rss_description: extractRssDescription(i.description),
         };
