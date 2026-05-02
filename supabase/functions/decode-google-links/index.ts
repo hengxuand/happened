@@ -151,23 +151,6 @@ function collectDecodedPayloads(value: unknown): string[] {
   return payloads;
 }
 
-function collectResponseLabels(
-  value: unknown,
-  labels: string[] = [],
-): string[] {
-  if (!Array.isArray(value) || labels.length >= 8) return labels;
-
-  for (const entry of value) {
-    if (labels.length >= 8) break;
-    if (!Array.isArray(entry)) continue;
-
-    if (typeof entry[0] === "string") labels.push(entry[0]);
-    collectResponseLabels(entry, labels);
-  }
-
-  return labels;
-}
-
 function formatError(err: unknown): string {
   if (err instanceof Error) return `${err.name}: ${err.message}`;
   return String(err);
@@ -328,109 +311,97 @@ async function decodeGoogleNewsUrlsBatch(
     return { decodedMap, failedCount };
   }
 
-  const payloads = decodeRequests.map((req) => [
-    "Fbv4je",
-    `["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],"${req.base64Str}",${req.timestamp},"${req.signature}"]`,
-  ]);
+  for (const request of decodeRequests) {
+    const payload = [
+      "Fbv4je",
+      `["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],"${request.base64Str}",${request.timestamp},"${request.signature}"]`,
+    ];
+    const requestBody = `f.req=${encodeURIComponent(JSON.stringify([[payload]]))}`;
 
-  const requestBody = `f.req=${encodeURIComponent(JSON.stringify([payloads]))}`;
+    let text = "";
+    let lastDecodeError: unknown;
 
-  let text = "";
-  let lastBatchError: unknown;
-  for (
-    let attempt = 1;
-    attempt <= BATCH_DECODE_RETRY_DELAYS_MS.length + 1;
-    attempt += 1
-  ) {
-    let response: Response | undefined;
-    try {
-      await humanDelay();
-      response = await fetchWithTimeout(GOOGLE_BATCH_EXECUTE_URL, {
-        method: "POST",
-        headers: GOOGLE_NEWS_BATCH_HEADERS,
-        body: requestBody,
-      });
+    for (
+      let attempt = 1;
+      attempt <= BATCH_DECODE_RETRY_DELAYS_MS.length + 1;
+      attempt += 1
+    ) {
+      let response: Response | undefined;
+      try {
+        await humanDelay();
+        response = await fetchWithTimeout(GOOGLE_BATCH_EXECUTE_URL, {
+          method: "POST",
+          headers: GOOGLE_NEWS_BATCH_HEADERS,
+          body: requestBody,
+        });
 
-      if (!response.ok) {
-        const retryable = RETRYABLE_STATUS_CODES.has(response.status);
-        const delayMs = getRetryDelayMs(response, attempt);
-        const err = new Error(
-          `Failed to decode URL batch (${response.status})`,
-        );
-        await cancelResponseBody(response);
-
-        if (
-          retryable &&
-          attempt <= BATCH_DECODE_RETRY_DELAYS_MS.length
-        ) {
-          lastBatchError = err;
-          onError?.(
-            `Batch decode request rate limited; retrying in ${delayMs}ms`,
-            err,
+        if (!response.ok) {
+          const retryable = RETRYABLE_STATUS_CODES.has(response.status);
+          const delayMs = getRetryDelayMs(response, attempt);
+          const err = new Error(
+            `Failed to decode URL (${response.status})`,
           );
+          await cancelResponseBody(response);
+
+          if (
+            retryable &&
+            attempt <= BATCH_DECODE_RETRY_DELAYS_MS.length
+          ) {
+            lastDecodeError = err;
+            onError?.(
+              `Decode request rate limited for link; retrying in ${delayMs}ms`,
+              err,
+            );
+            await sleep(delayMs + Math.floor(Math.random() * 500));
+            continue;
+          }
+
+          throw err;
+        }
+
+        text = await response.text();
+        break;
+      } catch (err) {
+        lastDecodeError = err;
+        if (response) await cancelResponseBody(response);
+        if (attempt <= BATCH_DECODE_RETRY_DELAYS_MS.length) {
+          const delayMs = BATCH_DECODE_RETRY_DELAYS_MS[attempt - 1];
           await sleep(delayMs + Math.floor(Math.random() * 500));
           continue;
         }
-
-        throw err;
-      }
-
-      text = await response.text();
-      break;
-    } catch (err) {
-      lastBatchError = err;
-      if (response) await cancelResponseBody(response);
-      if (attempt <= BATCH_DECODE_RETRY_DELAYS_MS.length) {
-        const delayMs = BATCH_DECODE_RETRY_DELAYS_MS[attempt - 1];
-        await sleep(delayMs + Math.floor(Math.random() * 500));
-        continue;
       }
     }
-  }
 
-  if (!text) {
-    failedCount += decodeRequests.length;
-    onError?.("Batch decode request failed", lastBatchError);
-    return { decodedMap, failedCount };
-  }
-
-  const splitParts = text.split("\n\n");
-  const outerJson = splitParts.find((part, index) =>
-    index > 0 && part.trim().startsWith("[")
-  );
-  if (!outerJson) {
-    failedCount += decodeRequests.length;
-    onError?.("Unexpected batchexecute response format");
-    return { decodedMap, failedCount };
-  }
-
-  let parsedOuter: Array<unknown> = [];
-  try {
-    parsedOuter = JSON.parse(outerJson) as Array<unknown>;
-  } catch (err) {
-    failedCount += decodeRequests.length;
-    onError?.("Failed to parse batchexecute outer payload", err);
-    return { decodedMap, failedCount };
-  }
-
-  const decodedPayloads = collectDecodedPayloads(parsedOuter);
-  const responseLabels = collectResponseLabels(parsedOuter);
-
-  for (let i = 0; i < decodeRequests.length; i += 1) {
-    const request = decodeRequests[i];
-    const rawInner = decodedPayloads[i];
-
-    if (!rawInner) {
+    if (!text) {
       failedCount += 1;
-      onError?.(
-        `Missing decode row for link: ${request.sourceUrl}; response_labels=${
-          responseLabels.join(",") || "none"
-        }`,
-      );
+      onError?.(`Decode request failed for link: ${request.sourceUrl}`, lastDecodeError);
       continue;
     }
 
-    const decodedUrl = parseDecodedUrl(rawInner);
+    const splitParts = text.split("\n\n");
+    const outerJson = splitParts.find((part, index) =>
+      index > 0 && part.trim().startsWith("[")
+    );
+    if (!outerJson) {
+      failedCount += 1;
+      onError?.(`Unexpected batchexecute response format for link: ${request.sourceUrl}`);
+      continue;
+    }
+
+    let parsedOuter: Array<unknown> = [];
+    try {
+      parsedOuter = JSON.parse(outerJson) as Array<unknown>;
+    } catch (err) {
+      failedCount += 1;
+      onError?.(`Failed to parse batchexecute payload for link: ${request.sourceUrl}`, err);
+      continue;
+    }
+
+    const rawInner = collectDecodedPayloads(parsedOuter).find((payload) =>
+      parseDecodedUrl(payload)
+    );
+    const decodedUrl = rawInner ? parseDecodedUrl(rawInner) : null;
+
     if (!decodedUrl) {
       failedCount += 1;
       onError?.(`Decoded URL missing for link: ${request.sourceUrl}`);
