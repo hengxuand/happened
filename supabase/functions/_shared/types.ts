@@ -13,6 +13,7 @@ export interface GoogleNewsRss {
     guid: string;
     link: string | null;
     description: string | null;
+    links_decoded: boolean | null;
     importance_score: number | null;
     importance_scored_at: string | null;
     updated_at: string | null;
