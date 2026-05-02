@@ -57,6 +57,12 @@ type BatchDecodeResult = {
   failedCount: number;
 };
 
+type DescriptionGoogleLinkEntry = {
+  href: string;
+  title: string;
+  source: string;
+};
+
 function parseDecodedUrl(rawInner: string): string | null {
   try {
     const parsedInner = JSON.parse(rawInner) as unknown[];
@@ -67,6 +73,61 @@ function parseDecodedUrl(rawInner: string): string | null {
   } catch {
     return null;
   }
+}
+
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#(\d+);/g, (_, dec: string) => {
+      const code = Number(dec);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : _;
+    })
+    .replace(/&#x([\da-fA-F]+);/g, (_, hex: string) => {
+      const code = Number.parseInt(hex, 16);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : _;
+    });
+}
+
+function stripTagsAndNormalize(value: string): string {
+  return decodeHtmlEntities(value)
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractGoogleLinkEntriesFromDescription(
+  html: string,
+): DescriptionGoogleLinkEntry[] {
+  const entries: DescriptionGoogleLinkEntry[] = [];
+  const liRegex = /<li\b[^>]*>([\s\S]*?)<\/li>/gi;
+
+  for (const liMatch of html.matchAll(liRegex)) {
+    const liHtml = liMatch[1] ?? "";
+    const anchorMatch = liHtml.match(
+      /<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i,
+    );
+    if (!anchorMatch) continue;
+
+    const href = anchorMatch[1] ?? "";
+    if (!extractBase64Token(href)) continue;
+
+    const title = stripTagsAndNormalize(anchorMatch[2] ?? "");
+    const sourceMatch = liHtml.match(/<font\b[^>]*>([\s\S]*?)<\/font>/i);
+    const source = stripTagsAndNormalize(sourceMatch?.[1] ?? "");
+
+    entries.push({
+      href,
+      title: title || "unknown",
+      source: source || "unknown",
+    });
+  }
+
+  return entries;
 }
 
 function collectDecodedPayloads(value: unknown): string[] {
@@ -468,12 +529,14 @@ Deno.serve(async (_req: Request) => {
         continue;
       }
 
-      const hrefMatches = Array.from(
-        row.description.matchAll(LINK_HREF_REGEX),
-      ) as RegExpMatchArray[];
-      const googleLinks = hrefMatches
-        .map((match) => match[1])
-        .filter((href): href is string => !!href && !!extractBase64Token(href));
+      const googleLinkEntries = extractGoogleLinkEntriesFromDescription(
+        row.description,
+      );
+      const googleLinks = googleLinkEntries.map((entry) => entry.href);
+      const metadataByHref = new Map<string, DescriptionGoogleLinkEntry>();
+      for (const entry of googleLinkEntries) {
+        if (!metadataByHref.has(entry.href)) metadataByHref.set(entry.href, entry);
+      }
 
       const uniqueGoogleLinks = [...new Set(googleLinks)].slice(
         0,
@@ -490,6 +553,14 @@ Deno.serve(async (_req: Request) => {
           row.description,
           decodedMap,
         );
+
+      for (const [originalUrl, decodedUrl] of decodedMap.entries()) {
+        const meta = metadataByHref.get(originalUrl);
+        log(
+          `Row ${row.id}: title=${meta?.title ?? "unknown"}, source=${meta?.source ?? "unknown"}, decoded_url=${decodedUrl}`,
+        );
+        log(`Row ${row.id}: original_url=${originalUrl}`);
+      }
 
       const allDecoded = totalGoogleLinks === successCount &&
         failedGoogleLinks === 0;
